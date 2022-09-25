@@ -31,21 +31,35 @@ public class Maze extends JPanel implements ActionListener {
     public Ghost pinky;
     
     Maze() {
-        createCellArray(map);
-        
-        System.out.println(gridLength);
-        
         setBackground(Color.BLACK);
-        setBounds(0, 0, CELL*gridLength, CELL*gridHeight);
         setFocusable(true);
+        requestFocus();
+        addKeyListener(new KeyLs());
         
-        running = true;
-        timer = new Timer(20, this);
-        timer.start();
+        newGame();
     }
     
     /**
-     * Läser och sparar data från en txt-fil vars karaktärer innebär en viss typ av cell (p -> pellet, h -> horisontell vägg, etc). 
+     * Startar om spelet och skapar ny spök- och spelarobjekt.
+     */
+    public void newGame() {
+        createCellArray(map);
+        setBounds(0, 0, CELL*gridLength, CELL*gridHeight);
+        
+        running = true;
+        timer = new Timer(150, this);
+        timer.start();
+        
+        player = new PacMan(cells, 13, 20, 'l');
+    }
+    
+    public void gameOver() {
+        running = false;
+        System.out.println("GAME OVER!!");
+    }
+    
+    /**
+     * Läser och sparar data från en txt-fil vars karaktärer innebär en viss typ av cell (d -> pellet, h -> horisontell vägg, etc). 
      * 
      * @param mapFile: Väg till banans txt-fil.
      */
@@ -53,14 +67,13 @@ public class Maze extends JPanel implements ActionListener {
         Scanner fileScanner;
         ArrayList<String> lineArray = new ArrayList<String>();
         
-        // Fil kan bli korrupt/raderad vilket skulle resultera i error, behövs try-catch.
-        try {
+        try { // Fil kan bli korrupt/raderad vilket skulle resultera i error, behövs try-catch.
             fileScanner = new Scanner(new File(mapFile));
             
             while(true) {
                 String line = null;
                 
-                try {
+                try { // När skannern når filslutet returneras ett error, behövs try-catch.
                     line = fileScanner.nextLine();
                 } catch(Exception e) {
                     System.out.println("SISTA TEXTRADEN");
@@ -115,7 +128,7 @@ public class Maze extends JPanel implements ActionListener {
             }
         }
         
-        // player.drawPacMan()
+        player.drawPacMan(g);
         // blinky.drawGhost()
         // ...
     }
@@ -123,10 +136,23 @@ public class Maze extends JPanel implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         if(running) {
-            
+            player.move();
         }
         
         repaint();
+    }
+    
+    class KeyLs extends KeyAdapter {
+        @Override
+        public void keyPressed(KeyEvent e) {
+            System.out.println("bruh");
+            switch(e.getKeyCode()) {
+                case KeyEvent.VK_W -> player.changeDir('u');
+                case KeyEvent.VK_S -> player.changeDir('d');
+                case KeyEvent.VK_D -> player.changeDir('r');
+                case KeyEvent.VK_A -> player.changeDir('l');
+            }
+        }     
     }
     
     /**
@@ -136,10 +162,6 @@ public class Maze extends JPanel implements ActionListener {
         lives--;
         
         // if lives < 0 then ...
-    }
-    
-    public Cell[][] getCells() {
-        return cells;
     }
     
     public int getLives() {
