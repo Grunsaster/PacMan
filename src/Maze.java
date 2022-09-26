@@ -2,23 +2,23 @@
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+import javax.sound.sampled.*;
 
 import java.util.Scanner;
 import java.util.ArrayList;
 import java.io.File;
 
 /**
- *
- * Skapar och ritar en labyrint med data från txt-filer. Hanterar kollisioner, game-over-logik och input.
  * 
  * @author tgrun
  */
 public class Maze extends JPanel implements ActionListener {
     public final int CELL = 15;
+    public int level = 1;
+    public int score = 0;
+    public String map;
+    
     public Cell[][] cells;
-    public String map = "src/maps/level_1.txt";
-    public int lives = 3;
-    public int score = 3;
     public int gridHeight;
     public int gridLength;
     public Timer timer;
@@ -29,6 +29,7 @@ public class Maze extends JPanel implements ActionListener {
     public Ghost clyde;
     public Ghost inky;
     public Ghost pinky;
+    public int ticksBeforeDeadly;
     
     Maze() {
         setBackground(Color.BLACK);
@@ -36,26 +37,53 @@ public class Maze extends JPanel implements ActionListener {
         requestFocus();
         addKeyListener(new KeyLs());
         
+        timer = new Timer(150, this);
+        timer.start();
+        
         newGame();
     }
     
     /**
-     * Startar om spelet och skapar ny spök- och spelarobjekt.
+     * Startar om spelet och skapar nya spök- och spelarobjekt.
      */
     public void newGame() {
-        createCellArray(map);
-        setBounds(0, 0, CELL*gridLength, CELL*gridHeight);
+        if(running) {
+            return;
+        }
         
         running = true;
-        timer = new Timer(150, this);
-        timer.start();
+        map = "src/maps/level_" + level + ".txt";
+        
+        createCellArray(map);
+        setBounds(0, 0, CELL*gridLength, CELL*gridHeight + 60);
         
         player = new PacMan(cells, 13, 20, 'l');
+        blinky = new Ghost(cells, 9, 22, Color.GREEN);
+        clyde = new Ghost(cells, 9, 22, Color.CYAN);
+        inky = new Ghost(cells, 9, 22, Color.RED);
+        pinky = new Ghost(cells, 9, 22, Color.PINK);
+        
+        playSound("src/sounds/musik.wav");
     }
     
-    public void gameOver() {
-        running = false;
-        System.out.println("GAME OVER!!");
+    /**
+     * Använder AudioSystem för att ladda in wav-filer och sedan spela upp dem.
+     * 
+     * @param fileName: Filväg till ljudfil
+     */
+    public void playSound(String fileName) {
+        try {
+            AudioInputStream stream = AudioSystem.getAudioInputStream(new File(fileName));
+            AudioFormat format = stream.getFormat();
+            DataLine.Info info = new DataLine.Info(Clip.class, format);
+            
+            Clip soundClip = (Clip) AudioSystem.getLine(info);
+            soundClip.open(stream);
+            soundClip.start();
+            
+        } catch(Exception e) {
+            System.out.println("KUNDE EJ LADDA " + fileName + ": " + e);
+        }
     }
     
     /**
@@ -65,9 +93,9 @@ public class Maze extends JPanel implements ActionListener {
      */
     public void createCellArray(String mapFile) {
         Scanner fileScanner;
-        ArrayList<String> lineArray = new ArrayList<String>();
+        ArrayList<String> lineArray = new ArrayList<String>(); // ArrayList används då array har fixerad max-index.
         
-        try { // Fil kan bli korrupt/raderad vilket skulle resultera i error, behövs try-catch.
+        try { // Fil kan bli korrupt/raderad/inte finnas vilket skulle resultera i error, behövs try-catch.
             fileScanner = new Scanner(new File(mapFile));
             
             while(true) {
@@ -106,14 +134,102 @@ public class Maze extends JPanel implements ActionListener {
     }
     
     /**
-     * Kollar ifall spelarens rad och kolumn motsvarar en av spökenas.
+     * Kollar ifall spelaren äter pellets och ifall spelares cell motsvarar en av spökenas.
      */
     public void checkCollisions() {
+        Cell currCell = cells[player.getRow()][player.getCol()];
         
+        // Pellets.
+        if(currCell.getType() == 'd') {
+            playSound("src/sounds/nomnom.wav");
+            currCell.changeType('o');
+            score = score+10;
+        }
+        
+        // Super-pellets.
+        if(currCell.getType() == 'p') {
+            playSound("src/sounds/superpellet.wav");
+            currCell.changeType('o');
+            ticksBeforeDeadly = 40;
+            
+            score = score+50;
+        }
+        
+        // Spöken
+        if(blinky.isInCell(currCell)) {
+            if(ticksBeforeDeadly > 0) {
+                playSound("src/sounds/rekt.wav");
+                playSound("src/sounds/outtahere.wav");
+                score = score+300;
+                
+                blinky = new Ghost(cells, 9, 22, Color.GREEN);
+            } else {
+                playSound("src/sounds/död.wav");
+                score = 0;
+                running = false;
+            }
+        }
+        if(clyde.isInCell(currCell)) {
+            if(ticksBeforeDeadly > 0) {
+                playSound("src/sounds/rekt.wav");
+                playSound("src/sounds/outtahere.wav");
+                score = score+300;
+                
+                clyde = new Ghost(cells, 9, 22, Color.CYAN);
+            } else {
+                playSound("src/sounds/död.wav");
+                score = 0;
+                running = false;
+            }
+        }
+        if(inky.isInCell(currCell)) {
+            if(ticksBeforeDeadly > 0) {
+                playSound("src/sounds/rekt.wav");
+                playSound("src/sounds/outtahere.wav");
+                score = score+300;
+                
+                inky = new Ghost(cells, 9, 22, Color.RED);
+            } else {
+                playSound("src/sounds/död.wav");
+                score = 0;
+                running = false;
+            }
+        }
+        if(pinky.isInCell(currCell)) {
+            if(ticksBeforeDeadly > 0) {
+                playSound("src/sounds/rekt.wav");
+                playSound("src/sounds/outtahere.wav");
+                score = score+300;
+                
+                pinky = new Ghost(cells, 9, 22, Color.PINK);
+            } else {
+                playSound("src/sounds/död.wav");
+                score = 0;
+                running = false;
+            }
+        }
     }
     
     /**
-     * Itererar genom cells och målar korrekt bakgrundstyp. Målar spöken och spelare. 
+     * Kollar ifall alla pellets är uppätna.
+     */
+    public void checkWinningConditions() {
+        for(int row = 0; row < gridHeight; row++) {
+            for(int col = 0; col < gridLength; col++) {
+                if(cells[row][col].getType() == 'd' || cells[row][col].getType() == 'p') {
+                    return;
+                }
+            }
+        }
+        
+        playSound("src/sounds/superstjärna.wav");
+        running = false;
+        level++;
+        newGame();
+    }
+    
+    /**
+     * Itererar genom celler och målar korrekt bakgrundstyp, målar spöken och spelare och målar poäng-tavla. 
      * 
      * @param g: Grafiska funktioner.
      */
@@ -128,47 +244,64 @@ public class Maze extends JPanel implements ActionListener {
             }
         }
         
+        // Ritar spelare/spöken.
         player.drawPacMan(g);
-        // blinky.drawGhost()
-        // ...
+        blinky.drawGhost(g, ticksBeforeDeadly);
+        clyde.drawGhost(g, ticksBeforeDeadly);
+        inky.drawGhost(g, ticksBeforeDeadly);
+        pinky.drawGhost(g, ticksBeforeDeadly);
+        
+        // Poäng-tavla
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Monospaced", Font.BOLD, 20));
+        
+        g.drawString("LEVEL: " + level, 20, CELL*gridHeight + 5);
+        g.drawString(""+score, 20, CELL*gridHeight + 25);
     }
     
+    /**
+     * Primära spel-loopen, körs av timern.
+     */
     @Override
     public void actionPerformed(ActionEvent e) {
         if(running) {
-            player.move();
+            checkCollisions();
+            checkWinningConditions();
+            
+            blinky.generatePath();
+            //clyde.generatePath();
+            //inky.generatePath();
+            //pinky.generatePath();
+            
+            blinky.move();
+            //clyde.move();
+            //inky.move();
+            //pinky.move();
+            //player.move();
+            
+            ticksBeforeDeadly--;
         }
         
         repaint();
     }
     
+    /**
+     * Generell tangentlyssnar klass. Lyssnar på keyPressed.
+     */
     class KeyLs extends KeyAdapter {
         @Override
         public void keyPressed(KeyEvent e) {
-            System.out.println("bruh");
             switch(e.getKeyCode()) {
                 case KeyEvent.VK_W -> player.changeDir('u');
                 case KeyEvent.VK_S -> player.changeDir('d');
                 case KeyEvent.VK_D -> player.changeDir('r');
                 case KeyEvent.VK_A -> player.changeDir('l');
+                case KeyEvent.VK_UP -> player.changeDir('u');
+                case KeyEvent.VK_DOWN -> player.changeDir('d');
+                case KeyEvent.VK_RIGHT -> player.changeDir('r');
+                case KeyEvent.VK_LEFT -> player.changeDir('l');
+                case KeyEvent.VK_SPACE -> newGame();
             }
         }     
-    }
-    
-    /**
-     * Minskar liv och hanterar game-over-logik.
-     */
-    public void loseLife() {
-        lives--;
-        
-        // if lives < 0 then ...
-    }
-    
-    public int getLives() {
-        return lives;
-    }
-    
-    public int getScore() {
-        return score;
     }
 }

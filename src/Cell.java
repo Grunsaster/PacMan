@@ -69,7 +69,7 @@ public class Cell {
             }
             case 'p' -> {
                 // cell med super-pellet
-                g.setColor(Color.YELLOW);
+                g.setColor(Color.ORANGE);
                 g.fillOval(x*CELL + CELL/2 - 5, y*CELL + CELL/2 - 5, 10, 10);
             }
             case 'e' -> {
@@ -77,12 +77,26 @@ public class Cell {
                 g.setColor(Color.WHITE);
                 g.fillRect(x*CELL, y*CELL + CELL/2, CELL, 3);
             }
+            case 't' -> {
+                // teleportör 1
+                g.setColor(Color.WHITE);
+                g.fillRect(x*CELL + CELL/2 - 1, y*CELL, 3, CELL);
+            }
+            case 'q' -> {
+                // teleportör 2
+                g.setColor(Color.WHITE);
+                g.fillRect(x*CELL + CELL/2 - 1, y*CELL, 3, CELL);
+            }
+            case 'A' -> {
+                // teleportör 2
+                g.setColor(Color.CYAN);
+                g.fillRect(x*CELL + CELL/2 - 2, y*CELL + CELL/2 - 2, 5, 5);
+            }
         }
     }
     
     /**
-     * För att göra runda hörn ritas en cirkel in i mitten av 4 celler, så att varje kvadrant är i sin egna cell,
-     * sedan bestäms ritområdet så att
+     * Målar rundade hörn genom att använda cirklar och att manipulera ritområdet.
      * 
      * @param g: Grafiska funktioner
      * @param xb: Där cirkelns x-position börjar
@@ -100,7 +114,24 @@ public class Cell {
         g2.setClip(oldClip); // Återgår till vanliga ritområdet.
     }
     
+    /**
+     * Ändrar celltyp, exempelvis efter pellets blir uppätna.
+     * 
+     * @param nType: Ny celltyp
+     */
+    public void changeType(char nType) {
+        type = nType;
+    }
+    
     public char getType() {
         return type;
+    }
+    
+    public int getCol() {
+        return x;
+    }
+    
+    public int getRow() {
+        return y;
     }
 }
