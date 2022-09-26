@@ -12,6 +12,7 @@ public class Ghost {
     public String illegals;
     public int x;
     public int y;
+    public Cell prevCell;
     public Cell pathCell;
     public ArrayList<Cell> cellSequence;
     public ArrayList<Cell> triedCells;
@@ -56,10 +57,6 @@ public class Ghost {
         triedCells = new ArrayList<>();
         cellSequence = new ArrayList<>();
         findPath(y, x);
-        
-        for(int c = 0; c < cellSequence.size(); c++) {
-            cellSequence.get(c).changeType('A');
-        }
     }
     
     /**

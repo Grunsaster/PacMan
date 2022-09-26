@@ -269,15 +269,15 @@ public class Maze extends JPanel implements ActionListener {
             checkWinningConditions();
             
             blinky.generatePath();
-            //clyde.generatePath();
-            //inky.generatePath();
-            //pinky.generatePath();
+            clyde.generatePath();
+            inky.generatePath();
+            pinky.generatePath();
             
             blinky.move();
-            //clyde.move();
-            //inky.move();
-            //pinky.move();
-            //player.move();
+            clyde.move();
+            inky.move();
+            pinky.move();
+            player.move();
             
             ticksBeforeDeadly--;
         }
